@@ -28,11 +28,17 @@ def polEval(policy):
             if cars2move > 0:
                 free_move = 1
             
+            add_park = 0
+            if stateA_moved > 10:
+                add_park += 1
+            if stateB_moved > 10:
+                add_park += 1
+            
             for new_stateA,new_stateB in itertools.product(range(CarRentalState.state_max+1),
                                                            range(CarRentalState.state_max+1)):
                 tmp += Pa[stateA_moved,new_stateA]*Pb[stateB_moved,new_stateB]* \
                        (Ra[stateA_moved,new_stateA]+Rb[stateB_moved,new_stateB]-
-                       abs(cars2move)*2 + 2*free_move + 0.9*V[new_stateA,new_stateB])
+                       abs(cars2move)*2 + 2*free_move - 4*add_park + 0.9*V[new_stateA,new_stateB])
                        
             diff = max(diff,abs(V[stateA,stateB]-tmp))
             V[stateA,stateB] = tmp  
@@ -54,12 +60,24 @@ def polImprove(policy):
                     stateA_moved,stateB_moved = CarRentalState.moveCars(stateA,stateB,cars2move)
                 except ValueError:
                     continue
+                
+                # One free move if moving from first to second
+                free_move = 0
+                if cars2move > 0:
+                    free_move = 1
+                    
+                add_park = 0
+                if stateA_moved > 10:
+                    add_park += 1
+                if stateB_moved > 10:
+                    add_park += 1
+                    
                 tmp = 0
                 for new_stateA,new_stateB in itertools.product(range(CarRentalState.state_max+1),
                                                                range(CarRentalState.state_max+1)):
                     tmp += Pa[stateA_moved,new_stateA]*Pb[stateB_moved,new_stateB]* \
                            (Ra[stateA_moved,new_stateA]+Rb[stateB_moved,new_stateB]-
-                           abs(cars2move)*2+0.9*V[new_stateA,new_stateB])
+                           abs(cars2move)*2 + 2*free_move - 4*add_park + 0.9*V[new_stateA,new_stateB])
                 if tmp > new_action_value:
                     new_action_value = tmp
                     new_action = cars2move
